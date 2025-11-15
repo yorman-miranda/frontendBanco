@@ -1,233 +1,3 @@
-// import { Injectable } from '@angular/core';
-// import { Observable } from 'rxjs';
-// import { ApiService } from './api.service';
-// import { AuthService } from './auth.service';
-// import { Transaccion, TransaccionCreateRequest, TransaccionUpdateRequest } from '../models';
-
-// @Injectable({
-//     providedIn: 'root'
-// })
-// export class TransaccionService {
-//     private readonly endpoint = '/transacciones';
-
-//     constructor(
-//         private apiService: ApiService,
-//         private authService: AuthService
-//     ) { }
-
-//     /**
-//      * Crear una nueva transacción
-//      */
-//     createTransaccion(transaccion: TransaccionCreateRequest): Observable<Transaccion> {
-//         const currentUserId = this.authService.getCurrentUserId();
-
-//         if (!currentUserId) {
-//             throw new Error('No hay usuario autenticado');
-//         }
-
-//         // Construir payload para el backend
-//         const payload: any = {
-//             tipo: transaccion.tipo,
-//             monto: transaccion.monto,
-//             idCuenta: transaccion.idCuenta,
-//             id_usuario_creacion: currentUserId
-//         };
-
-//         console.log('📤 Creando transacción:', payload);
-//         return this.apiService.post<Transaccion>(this.endpoint, payload);
-//     }
-
-//     /**
-//      * Obtener todas las transacciones con paginación
-//      */
-//     getTransacciones(skip: number = 0, limit: number = 100): Observable<Transaccion[]> {
-//         return this.apiService.get<Transaccion[]>(this.endpoint, { skip, limit });
-//     }
-
-//     /**
-//      * Obtener una transacción por su ID
-//      */
-//     getTransaccionById(id: string): Observable<Transaccion> {
-//         return this.apiService.get<Transaccion>(`${this.endpoint}/${id}`);
-//     }
-
-//     /**
-//      * Obtener transacciones por cuenta específica
-//      */
-//     getTransaccionesByCuenta(cuentaId: string): Observable<Transaccion[]> {
-//         return this.apiService.get<Transaccion[]>(`${this.endpoint}/cuenta/${cuentaId}`);
-//     }
-
-//     /**
-//      * Actualizar una transacción existente
-//      */
-//     updateTransaccion(id: string, transaccion: TransaccionUpdateRequest): Observable<Transaccion> {
-//         const currentUserId = this.authService.getCurrentUserId();
-
-//         if (!currentUserId) {
-//             throw new Error('No hay usuario autenticado');
-//         }
-
-//         // Construir payload para actualización
-//         const payload: any = {};
-
-//         // Solo incluir campos que se quieren actualizar
-//         if (transaccion.tipo !== undefined) payload.tipo = transaccion.tipo;
-//         if (transaccion.monto !== undefined) payload.monto = transaccion.monto;
-//         if (transaccion.idCuenta !== undefined) payload.idCuenta = transaccion.idCuenta;
-
-//         // Campo obligatorio para auditoría
-//         payload.id_usuario_edicion = currentUserId;
-
-//         return this.apiService.put<Transaccion>(`${this.endpoint}/${id}`, payload);
-//     }
-
-//     /**
-//      * Eliminar una transacción
-//      * Solo disponible para administradores
-//      */
-//     deleteTransaccion(id: string): Observable<any> {
-//         return this.apiService.delete<any>(`${this.endpoint}/${id}`);
-//     }
-
-//     /**
-//      * Método auxiliar para obtener el tipo de clase CSS basado en el tipo de transacción
-//      */
-//     getTipoClass(tipo: string): string {
-//         switch (tipo?.toUpperCase()) {
-//             case 'DEPOSITO':
-//                 return 'tipo-deposito';
-//             case 'RETIRO':
-//                 return 'tipo-retiro';
-//             case 'TRANSFERENCIA':
-//                 return 'tipo-transferencia';
-//             default:
-//                 return 'tipo-default';
-//         }
-//     }
-
-//     /**
-//      * Método auxiliar para formatear el monto como moneda
-//      */
-//     formatMonto(monto: number): string {
-//         return new Intl.NumberFormat('es-MX', {
-//             style: 'currency',
-//             currency: 'MXN'
-//         }).format(monto);
-//     }
-
-//     /**
-//      * Método auxiliar para obtener el icono según el tipo de transacción
-//      */
-//     getTipoIcon(tipo: string): string {
-//         switch (tipo?.toUpperCase()) {
-//             case 'DEPOSITO':
-//                 return '💰';
-//             case 'RETIRO':
-//                 return '💸';
-//             case 'TRANSFERENCIA':
-//                 return '🔄';
-//             default:
-//                 return '📄';
-//         }
-//     }
-
-//     /**
-//      * Método auxiliar para obtener el color según el tipo de transacción
-//      */
-//     getTipoColor(tipo: string): string {
-//         switch (tipo?.toUpperCase()) {
-//             case 'DEPOSITO':
-//                 return '#28a745'; // Verde
-//             case 'RETIRO':
-//                 return '#dc3545'; // Rojo
-//             case 'TRANSFERENCIA':
-//                 return '#007bff'; // Azul
-//             default:
-//                 return '#6c757d'; // Gris
-//         }
-//     }
-
-//     /**
-//      * Filtrar transacciones por tipo
-//      */
-//     filtrarPorTipo(transacciones: Transaccion[], tipo: string): Transaccion[] {
-//         return transacciones.filter(t => t.tipo?.toUpperCase() === tipo.toUpperCase());
-//     }
-
-//     /**
-//      * Filtrar transacciones por rango de fechas
-//      */
-//     filtrarPorFecha(transacciones: Transaccion[], fechaInicio: Date, fechaFin: Date): Transaccion[] {
-//         return transacciones.filter(t => {
-//             const fechaTransaccion = new Date(t.fecha);
-//             return fechaTransaccion >= fechaInicio && fechaTransaccion <= fechaFin;
-//         });
-//     }
-
-//     /**
-//      * Obtener estadísticas de transacciones
-//      */
-//     obtenerEstadisticas(transacciones: Transaccion[]): any {
-//         const totalDepositos = this.filtrarPorTipo(transacciones, 'DEPOSITO')
-//             .reduce((sum, t) => sum + t.monto, 0);
-
-//         const totalRetiros = this.filtrarPorTipo(transacciones, 'RETIRO')
-//             .reduce((sum, t) => sum + t.monto, 0);
-
-//         const totalTransferencias = this.filtrarPorTipo(transacciones, 'TRANSFERENCIA')
-//             .reduce((sum, t) => sum + t.monto, 0);
-
-//         return {
-//             totalTransacciones: transacciones.length,
-//             totalDepositos,
-//             totalRetiros,
-//             totalTransferencias,
-//             saldoNeto: totalDepositos - totalRetiros
-//         };
-//     }
-
-//     /**
-//      * Obtener las últimas transacciones (más recientes primero)
-//      */
-//     getUltimasTransacciones(transacciones: Transaccion[], cantidad: number = 10): Transaccion[] {
-//         return transacciones
-//             .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-//             .slice(0, cantidad);
-//     }
-
-//     /**
-//      * Validar datos de transacción antes de enviar
-//      */
-//     validarTransaccion(transaccion: TransaccionCreateRequest): { valido: boolean; errores: string[] } {
-//         const errores: string[] = [];
-
-//         if (!transaccion.tipo) {
-//             errores.push('El tipo de transacción es requerido');
-//         }
-
-//         if (!transaccion.monto || transaccion.monto <= 0) {
-//             errores.push('El monto debe ser mayor a 0');
-//         }
-
-//         if (!transaccion.idCuenta) {
-//             errores.push('El ID de cuenta es requerido');
-//         }
-
-//         // Validar tipos permitidos
-//         const tiposPermitidos = ['DEPOSITO', 'RETIRO', 'TRANSFERENCIA'];
-//         if (transaccion.tipo && !tiposPermitidos.includes(transaccion.tipo.toUpperCase())) {
-//             errores.push(`Tipo de transacción no válido. Permitidos: ${tiposPermitidos.join(', ')}`);
-//         }
-
-//         return {
-//             valido: errores.length === 0,
-//             errores
-//         };
-//     }
-// }
-
-// transaccion.service.ts
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
@@ -284,6 +54,19 @@ export interface RespuestaTransaccion {
     datos?: any;
 }
 
+export interface ActualizacionSaldo {
+    idCuenta: string;
+    monto: number;
+    tipoOperacion: 'DEPOSITO' | 'RETIRO' | 'TRANSFERENCIA';
+}
+
+export interface RespuestaActualizacionSaldo {
+    mensaje: string;
+    exito: boolean;
+    nuevoSaldo: number;
+    cuenta: any;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -294,7 +77,7 @@ export class TransaccionService {
         private authService: AuthService
     ) { }
 
-    // Obtener todas las transacciones
+
     getTransacciones(filtros?: FiltroTransacciones): Observable<Transaccion[]> {
         let endpoint = '/transacciones/';
         let params: any = {};
@@ -310,29 +93,109 @@ export class TransaccionService {
         );
     }
 
-    // Obtener transacción por ID
+
     getTransaccionById(id: string): Observable<Transaccion> {
         return this.apiService.get<Transaccion>(`/transacciones/${id}`).pipe(
             map(transaccion => this.parseTransaccion(transaccion))
         );
     }
 
-    // Obtener transacciones por cuenta
+
     getTransaccionesByCuenta(cuentaId: string): Observable<Transaccion[]> {
         return this.apiService.get<Transaccion[]>(`/transacciones/cuenta/${cuentaId}`).pipe(
             map(transacciones => transacciones.map(t => this.parseTransaccion(t)))
         );
     }
 
-    // Crear nueva transacción
+
     createTransaccion(transaccionData: TransaccionCreateRequest): Observable<Transaccion> {
-        // El backend ya obtiene el usuario del token, pero podemos agregar info adicional si es necesario
         const userId = this.authService.getCurrentUserId();
         console.log('👤 Usuario creando transacción:', userId);
 
-        return this.apiService.post<Transaccion>('/transacciones/', transaccionData).pipe(
+        const payload: any = {
+            tipo: transaccionData.tipo,
+            monto: transaccionData.monto,
+            idCuenta: transaccionData.idCuenta
+        };
+
+
+        if (transaccionData.idCuentaDestino) {
+            payload.idCuentaDestino = transaccionData.idCuentaDestino;
+        }
+
+        if (transaccionData.descripcion) {
+            payload.descripcion = transaccionData.descripcion;
+        }
+
+
+        if (userId) {
+            payload.id_usuario_creacion = userId;
+        }
+
+        console.log('📤 Payload para crear transacción:', payload);
+
+        return this.apiService.post<Transaccion>('/transacciones/', payload).pipe(
             map(transaccion => this.parseTransaccion(transaccion))
         );
+    }
+
+
+    actualizarSaldoCuenta(actualizacion: ActualizacionSaldo): Observable<RespuestaActualizacionSaldo> {
+        console.log('🔄 Actualizando saldo:', actualizacion);
+        return this.apiService.put<RespuestaActualizacionSaldo>('/cuentas/actualizar-saldo', actualizacion);
+    }
+
+
+    obtenerSaldoCuenta(idCuenta: string): Observable<{ saldo: number }> {
+        return this.apiService.get<{ saldo: number }>(`/cuentas/${idCuenta}/saldo`);
+    }
+
+
+    procesarTransaccionCompleta(transaccionData: TransaccionCreateRequest): Observable<any> {
+        return new Observable(observer => {
+            console.log('🔄 Iniciando procesamiento de transacción completa...');
+
+            this.createTransaccion(transaccionData).subscribe({
+                next: (transaccion) => {
+                    console.log('✅ Transacción creada:', transaccion);
+
+
+                    const actualizacion: ActualizacionSaldo = {
+                        idCuenta: transaccionData.idCuenta,
+                        monto: transaccionData.monto,
+                        tipoOperacion: transaccionData.tipo as any
+                    };
+
+                    console.log('🔄 Actualizando saldo:', actualizacion);
+
+                    this.actualizarSaldoCuenta(actualizacion).subscribe({
+                        next: (respuestaSaldo) => {
+                            console.log('✅ Saldo actualizado:', respuestaSaldo);
+                            observer.next({
+                                transaccion: transaccion,
+                                actualizacionSaldo: respuestaSaldo,
+                                mensaje: 'Transacción completada exitosamente'
+                            });
+                            observer.complete();
+                        },
+                        error: (errorSaldo) => {
+                            console.error('❌ Error actualizando saldo:', errorSaldo);
+                            // Aún así devolvemos la transacción creada
+                            observer.next({
+                                transaccion: transaccion,
+                                errorSaldo: errorSaldo,
+                                mensaje: 'Transacción creada pero error actualizando saldo'
+                            });
+                            observer.complete();
+                        }
+                    });
+                },
+                error: (errorTransaccion) => {
+                    console.error('❌ Error creando transacción:', errorTransaccion);
+                    observer.error(this.getErrorMessage(errorTransaccion));
+                }
+            });
+        });
     }
 
     // Actualizar transacción
@@ -377,7 +240,7 @@ export class TransaccionService {
         };
     }
 
-    // Filtrar transacciones localmente
+
     filtrarPorTipo(transacciones: Transaccion[], tipo: string): Transaccion[] {
         return transacciones.filter(t => t.tipo === tipo);
     }
@@ -393,7 +256,7 @@ export class TransaccionService {
         });
     }
 
-    // Calcular estadísticas
+
     obtenerEstadisticas(transacciones: Transaccion[]): EstadisticasTransacciones {
         const totalTransacciones = transacciones.length;
         const depositos = transacciones.filter(t => t.tipo === 'DEPOSITO');
@@ -415,7 +278,7 @@ export class TransaccionService {
         };
     }
 
-    // Métodos para formateo y estilos
+
     getTipoClass(tipo: string): string {
         switch (tipo) {
             case 'DEPOSITO':
@@ -468,7 +331,7 @@ export class TransaccionService {
         }).format(monto);
     }
 
-    // Parsear fechas de string a Date
+
     private parseTransaccion(transaccion: any): Transaccion {
         return {
             ...transaccion,
@@ -476,5 +339,28 @@ export class TransaccionService {
             fecha_creacion: new Date(transaccion.fecha_creacion),
             fecha_actualizacion: transaccion.fecha_actualizacion ? new Date(transaccion.fecha_actualizacion) : undefined
         };
+    }
+
+    private getErrorMessage(error: any): string {
+        console.log('🔍 Error completo:', error);
+
+        if (error.error?.detail) {
+            return error.error.detail;
+        }
+        if (error.error?.errors) {
+            // Si hay errores de validación
+            const errors = error.error.errors;
+            return Object.keys(errors).map(key => `${key}: ${errors[key]}`).join(', ');
+        }
+        if (error.error?.message) {
+            return error.error.message;
+        }
+        if (error.message) {
+            return error.message;
+        }
+        if (typeof error === 'string') {
+            return error;
+        }
+        return 'Error desconocido al procesar la transacción';
     }
 }

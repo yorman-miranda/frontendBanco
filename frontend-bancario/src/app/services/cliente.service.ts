@@ -30,8 +30,7 @@ export interface ClienteCreateRequest {
     telefono?: string;
     direccion?: string;
     idSucursal?: string;
-    idUsuario: string;  // ← CAMBIAR a idUsuario (para relación con usuario)
-    // id_usuario_creacion lo maneja el backend automáticamente
+    idUsuario: string;
 }
 
 export interface ClienteUpdateRequest {
@@ -41,8 +40,7 @@ export interface ClienteUpdateRequest {
     telefono?: string;
     direccion?: string;
     idSucursal?: string;
-    idUsuario?: string;  // ← Para actualización también
-    // id_usuario_edicion lo maneja el backend automáticamente
+    idUsuario?: string;
 }
 
 export interface FiltroClientes {
@@ -92,34 +90,6 @@ export class ClienteService {
                 catchError(this.handleError)
             );
     }
-
-    /**
-     * Crear nuevo cliente
-     */
-    // createCliente(cliente: ClienteCreateRequest): Observable<Cliente> {
-    //     const currentUserId = this.authService.getCurrentUserId();
-
-    //     if (!currentUserId) {
-    //         return throwError(() => new Error('Usuario no autenticado'));
-    //     }
-
-    //     // Agregar el id_usuario_creacion al payload
-    //     // const payload = {
-    //     //     ...cliente,
-    //     //     id_usuario_creacion: currentUserId
-    //     // };
-
-    //     // console.log('📤 Payload para crear cliente:', payload);
-
-    //     // return this.http.post<Cliente>(this.apiUrl, payload)
-    //     //     .pipe(
-    //     //         catchError(this.handleError)
-    //     //     );
-    //     return this.http.post<Cliente>(this.apiUrl, cliente)
-    //         .pipe(
-    //             catchError(this.handleError)
-    //         );
-    // }
     createCliente(cliente: ClienteCreateRequest): Observable<Cliente> {
         console.log('📤 Payload para crear cliente:', cliente);
         return this.http.post<Cliente>(this.apiUrl, cliente)
@@ -127,9 +97,7 @@ export class ClienteService {
                 catchError(this.handleError)
             );
     }
-    /**
-     * Actualizar cliente
-     */
+
     updateCliente(id: string, cliente: ClienteUpdateRequest): Observable<Cliente> {
         return this.http.put<Cliente>(`${this.apiUrl}/${id}`, cliente)
             .pipe(
@@ -137,9 +105,7 @@ export class ClienteService {
             );
     }
 
-    /**
-     * Eliminar cliente
-     */
+
     deleteCliente(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`)
             .pipe(
@@ -147,9 +113,6 @@ export class ClienteService {
             );
     }
 
-    /**
-     * Buscar clientes por término
-     */
     searchClientes(term: string): Observable<Cliente[]> {
         const params = new HttpParams().set('search', term);
         return this.http.get<Cliente[]>(`${this.apiUrl}/search`, { params })
@@ -158,9 +121,7 @@ export class ClienteService {
             );
     }
 
-    /**
-     * Obtener clientes por sucursal
-     */
+
     getClientesBySucursal(idSucursal: string): Observable<Cliente[]> {
         return this.http.get<Cliente[]>(`${this.apiUrl}/sucursal/${idSucursal}`)
             .pipe(
@@ -168,9 +129,7 @@ export class ClienteService {
             );
     }
 
-    /**
-     * Validar datos del cliente antes de crear/actualizar
-     */
+
     validarCliente(cliente: ClienteCreateRequest | ClienteUpdateRequest): { valido: boolean; errores: string[] } {
         const errores: string[] = [];
 
@@ -195,9 +154,7 @@ export class ClienteService {
         };
     }
 
-    /**
-     * Formatear datos del cliente para mostrar
-     */
+
     formatCliente(cliente: Cliente): any {
         return {
             ...cliente,
@@ -206,9 +163,7 @@ export class ClienteService {
         };
     }
 
-    /**
-     * Filtrar clientes localmente (para uso en componentes)
-     */
+
     filtrarClientes(clientes: Cliente[], filtro: string): Cliente[] {
         if (!filtro) return clientes;
 
@@ -221,9 +176,6 @@ export class ClienteService {
         );
     }
 
-    /**
-     * Manejo de errores
-     */
     private handleError(error: any): Observable<never> {
         console.error('Error en ClienteService:', error);
 

@@ -112,6 +112,6 @@ export class AuthService {
         console.log('Is Authenticated:', this.isAuthenticated());
         console.log('Is Admin:', this.isAdmin());
     }
-
-
 }
+
+

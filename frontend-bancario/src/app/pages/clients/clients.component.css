@@ -235,55 +235,7 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .clientes-container {
-        padding: 10px;
-    }
-
-    .actions-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .search-container {
-        max-width: none;
-    }
-
-    .form-row {
-        flex-direction: column;
-    }
-
-    .filter-row {
-        flex-direction: column;
-    }
-
-    .filter-row input,
-    .filter-row select {
-        min-width: auto;
-    }
-
-    table {
-        font-size: 14px;
-    }
-
-    th,
-    td {
-        padding: 8px 4px;
-    }
-
-    .actions {
-        flex-direction: column;
-    }
-
-    .btn-primary,
-    .btn-secondary {
-        padding: 8px 16px;
-        font-size: 13px;
-    }
-}
-
-/* Estilos para el modal de edición */
+/* ESTILOS DEL MODAL - CORREGIDOS */
 .modal-backdrop {
     position: fixed;
     top: 0;
@@ -295,19 +247,48 @@ button:disabled {
 }
 
 .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 1050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal-dialog {
+    margin: 0;
+    max-width: 500px;
+    width: 90%;
+}
+
+.modal-dialog.modal-lg {
+    max-width: 800px;
 }
 
 .modal-content {
     border: none;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    background: white;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-header {
     background: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
     padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .modal-title {
@@ -327,6 +308,7 @@ button:disabled {
     width: 1em;
     height: 1em;
     padding: 0.25em;
+    cursor: pointer;
 }
 
 .btn-close:hover {
@@ -378,10 +360,61 @@ button:disabled {
     margin-top: 20px;
 }
 
-/* Responsive para el modal */
+/* Responsive */
 @media (max-width: 768px) {
+    .clientes-container {
+        padding: 10px;
+    }
+
+    .actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-container {
+        max-width: none;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .filter-row {
+        flex-direction: column;
+    }
+
+    .filter-row input,
+    .filter-row select {
+        min-width: auto;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th,
+    td {
+        padding: 8px 4px;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    /* Responsive para el modal */
     .modal-dialog {
         margin: 10px;
+        width: calc(100% - 20px);
+    }
+
+    .modal-dialog.modal-lg {
+        max-width: calc(100vw - 20px);
     }
 
     .modal-body .form-row {

@@ -35,9 +35,10 @@
 
             <div class="form-group">
                 <label>{{ getLabelOrigen() }}</label>
-                <input type="text" [(ngModel)]="newTransaccion.idCuenta" name="numeroCuenta"
-                    [placeholder]="getPlaceholderOrigen()" (input)="onCuentaInput($event, 'origen')" required
-                    [attr.list]="'cuentas-origen'">
+                <input type="text" [(ngModel)]="numeroCuentaOrigen" name="numeroCuentaOrigen"
+                    [placeholder]="getPlaceholderOrigen()"
+                    (input)="onNumeroCuentaChange(numeroCuentaOrigen, 'origen'); filtrarCuentas(numeroCuentaOrigen, 'origen')"
+                    required [attr.list]="'cuentas-origen'">
                 <datalist id="cuentas-origen">
                     <option *ngFor="let cuenta of cuentasFiltradasOrigen" [value]="cuenta.numeroCuenta">
                         {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo || 0)
@@ -45,15 +46,19 @@
                     </option>
                 </datalist>
                 <div *ngIf="newTransaccion.idCuenta" class="cuenta-info">
-                    {{ getCuentaInfo(newTransaccion.idCuenta) }}
+                    ✅ Cuenta válida: {{ getCuentaInfo(newTransaccion.idCuenta) }}
+                </div>
+                <div *ngIf="numeroCuentaOrigen && !newTransaccion.idCuenta" class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
                 </div>
             </div>
 
             <div *ngIf="mostrarCampoDestino()" class="form-group">
                 <label>Cuenta Destino *</label>
-                <input type="text" [(ngModel)]="newTransaccion.idCuentaDestino" name="numeroCuentaDestino"
-                    placeholder="Número de cuenta destino" (input)="onCuentaInput($event, 'destino')" required
-                    [attr.list]="'cuentas-destino'">
+                <input type="text" [(ngModel)]="numeroCuentaDestino" name="numeroCuentaDestino"
+                    placeholder="Número de cuenta destino"
+                    (input)="onNumeroCuentaChange(numeroCuentaDestino, 'destino'); filtrarCuentas(numeroCuentaDestino, 'destino')"
+                    required [attr.list]="'cuentas-destino'">
                 <datalist id="cuentas-destino">
                     <option *ngFor="let cuenta of cuentasFiltradasDestino" [value]="cuenta.numeroCuenta">
                         {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo || 0)
@@ -61,7 +66,10 @@
                     </option>
                 </datalist>
                 <div *ngIf="newTransaccion.idCuentaDestino" class="cuenta-info">
-                    {{ getCuentaInfo(newTransaccion.idCuentaDestino) }}
+                    ✅ Cuenta válida: {{ getCuentaInfo(newTransaccion.idCuentaDestino) }}
+                </div>
+                <div *ngIf="numeroCuentaDestino && !newTransaccion.idCuentaDestino" class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
                 </div>
                 <div *ngIf="newTransaccion.idCuenta === newTransaccion.idCuentaDestino && newTransaccion.idCuenta"
                     class="error-text">
@@ -76,7 +84,9 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" [disabled]="!transaccionForm.valid || isLoading" class="btn-primary">
+                <button type="submit"
+                    [disabled]="!transaccionForm.valid || isLoading || !newTransaccion.idCuenta || (mostrarCampoDestino() && !newTransaccion.idCuentaDestino)"
+                    class="btn-primary">
                     {{ isLoading ? 'Procesando...' : 'Realizar Transacción' }}
                 </button>
                 <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>

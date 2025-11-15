@@ -15,7 +15,6 @@ export class AdminGuard implements CanActivate {
         if (this.authService.isAdmin()) {
             return true;
         } else {
-            // Redirigir al dashboard si no es admin
             this.router.navigate(['/dashboard']);
             return false;
         }

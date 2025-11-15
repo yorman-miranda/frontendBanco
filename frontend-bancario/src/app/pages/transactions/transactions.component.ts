@@ -26,6 +26,10 @@ export class TransaccionesComponent implements OnInit {
   searchId: string = '';
   estadisticas: EstadisticasTransacciones | null = null;
 
+  // Para mapeo número de cuenta -> UUID
+  numeroCuentaOrigen: string = '';
+  numeroCuentaDestino: string = '';
+
   // Filtros
   filtros: FiltroTransacciones = {
     tipo: '',
@@ -36,9 +40,9 @@ export class TransaccionesComponent implements OnInit {
     limit: 50
   };
 
-  // Nueva transacción
+  // Nueva transacción (con UUIDs)
   newTransaccion: TransaccionCreateRequest = {
-    tipo: 'TRANSFERENCIA',
+    tipo: 'DEPOSITO',
     monto: 0,
     idCuenta: '',
     idCuentaDestino: '',
@@ -77,9 +81,10 @@ export class TransaccionesComponent implements OnInit {
         this.transaccionesFiltradas = transacciones;
         this.calcularEstadisticas();
         this.isLoading = false;
+        console.log('✅ Transacciones cargadas:', transacciones.length);
       },
       error: (error) => {
-        console.error('Error cargando transacciones:', error);
+        console.error('❌ Error cargando transacciones:', error);
         this.isLoading = false;
         this.showError('Error al cargar transacciones: ' + this.getErrorMessage(error));
       }
@@ -94,16 +99,52 @@ export class TransaccionesComponent implements OnInit {
         this.cuentasFiltradasOrigen = cuentas;
         this.cuentasFiltradasDestino = cuentas;
         this.isLoadingCuentas = false;
+        console.log('✅ Cuentas cargadas:', cuentas);
       },
       error: (error) => {
-        console.error('Error cargando cuentas:', error);
+        console.error('❌ Error cargando cuentas:', error);
         this.isLoadingCuentas = false;
         this.showError('Error al cargar cuentas: ' + this.getErrorMessage(error));
       }
     });
   }
 
-  // Filtrar cuentas en tiempo real
+  // Buscar cuenta por número de cuenta y devolver UUID
+  buscarCuentaPorNumero(numeroCuenta: string): Cuenta | null {
+    const cuenta = this.cuentas.find(c =>
+      c.numeroCuenta === numeroCuenta || c.idCuenta === numeroCuenta
+    );
+    return cuenta || null;
+  }
+
+  // Cuando el usuario ingresa un número de cuenta
+  onNumeroCuentaChange(valor: string, tipo: 'origen' | 'destino') {
+    console.log(`🔍 Buscando cuenta ${tipo}:`, valor);
+
+    const cuenta = this.buscarCuentaPorNumero(valor);
+
+    if (cuenta) {
+      console.log('✅ Cuenta encontrada:', cuenta);
+      if (tipo === 'origen') {
+        this.newTransaccion.idCuenta = cuenta.idCuenta;
+        this.numeroCuentaOrigen = cuenta.numeroCuenta;
+      } else {
+        this.newTransaccion.idCuentaDestino = cuenta.idCuenta;
+        this.numeroCuentaDestino = cuenta.numeroCuenta;
+      }
+    } else {
+      console.log('❌ Cuenta no encontrada');
+      if (tipo === 'origen') {
+        this.newTransaccion.idCuenta = '';
+        this.numeroCuentaOrigen = valor;
+      } else {
+        this.newTransaccion.idCuentaDestino = '';
+        this.numeroCuentaDestino = valor;
+      }
+    }
+  }
+
+  // Filtrar cuentas para el datalist
   filtrarCuentas(busqueda: string, tipo: 'origen' | 'destino') {
     if (!busqueda) {
       if (tipo === 'origen') {
@@ -116,8 +157,8 @@ export class TransaccionesComponent implements OnInit {
 
     const term = busqueda.toLowerCase();
     const cuentasFiltradas = this.cuentas.filter(cuenta =>
-      cuenta.numeroCuenta.toLowerCase().includes(term) ||
-      cuenta.idCuenta.toLowerCase().includes(term)
+      cuenta.numeroCuenta?.toLowerCase().includes(term) ||
+      cuenta.idCuenta?.toLowerCase().includes(term)
     );
 
     if (tipo === 'origen') {
@@ -127,33 +168,24 @@ export class TransaccionesComponent implements OnInit {
     }
   }
 
-  // Seleccionar cuenta automáticamente cuando se encuentra una coincidencia exacta
-  onCuentaInput(event: any, tipo: 'origen' | 'destino') {
-    const valor = event.target.value;
-    this.filtrarCuentas(valor, tipo);
-
-    // Buscar coincidencia exacta
-    const cuentaEncontrada = this.cuentas.find(cuenta =>
-      cuenta.numeroCuenta === valor || cuenta.idCuenta === valor
-    );
-
-    if (cuentaEncontrada) {
-      if (tipo === 'origen') {
-        this.newTransaccion.idCuenta = cuentaEncontrada.idCuenta;
-      } else {
-        this.newTransaccion.idCuentaDestino = cuentaEncontrada.idCuenta;
-      }
-    } else {
-      // Limpiar si no hay coincidencia
-      if (tipo === 'origen') {
-        this.newTransaccion.idCuenta = '';
-      } else {
-        this.newTransaccion.idCuentaDestino = '';
-      }
-    }
-  }
-
   onSubmit() {
+    console.log('🔄 Enviando transacción...', this.newTransaccion);
+    console.log('📋 Números de cuenta:', {
+      origen: this.numeroCuentaOrigen,
+      destino: this.numeroCuentaDestino
+    });
+
+    // Validar que tenemos UUIDs válidos
+    if (!this.isValidUUID(this.newTransaccion.idCuenta)) {
+      this.showError('Cuenta origen no válida. Seleccione una cuenta de la lista.');
+      return;
+    }
+
+    if (this.mostrarCampoDestino() && !this.isValidUUID(this.newTransaccion.idCuentaDestino || '')) {
+      this.showError('Cuenta destino no válida. Seleccione una cuenta de la lista.');
+      return;
+    }
+
     const validacion = this.transaccionService.validarTransaccion(this.newTransaccion);
 
     if (!validacion.valido) {
@@ -162,20 +194,39 @@ export class TransaccionesComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.transaccionService.createTransaccion(this.newTransaccion).subscribe({
+
+    this.transaccionService.procesarTransaccionCompleta(this.newTransaccion).subscribe({
       next: (response) => {
+        console.log('✅ Transacción completada:', response);
+
+        const nuevoSaldo = response.actualizacionSaldo?.nuevoSaldo;
+        let mensaje = 'Transacción creada exitosamente!';
+
+        if (nuevoSaldo !== undefined) {
+          mensaje = `Transacción creada exitosamente! Nuevo saldo: ${this.formatMonto(nuevoSaldo)}`;
+        } else if (response.errorSaldo) {
+          mensaje = 'Transacción creada pero hubo un problema actualizando el saldo';
+        }
+
         this.loadTransacciones();
+        this.loadCuentas();
         this.showForm = false;
         this.resetForm();
-        this.showSuccess('Transacción creada exitosamente!');
+        this.showSuccess(mensaje);
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error creando transacción:', error);
+        console.error('❌ Error creando transacción:', error);
         this.showError('Error al crear transacción: ' + this.getErrorMessage(error));
         this.isLoading = false;
       }
     });
+  }
+
+  // Validar formato UUID
+  isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   }
 
   // Cambiar visibilidad de campos según el tipo de transacción
@@ -186,13 +237,11 @@ export class TransaccionesComponent implements OnInit {
   getPlaceholderOrigen(): string {
     switch (this.newTransaccion.tipo) {
       case 'DEPOSITO':
-        return 'Cuenta que recibe el depósito';
+        return 'Número de cuenta que recibe el depósito';
       case 'RETIRO':
-        return 'Cuenta de la que se retira';
+        return 'Número de cuenta de la que se retira';
       case 'TRANSFERENCIA':
-        return 'Cuenta de origen';
-      case 'PAGO_SERVICIO':
-        return 'Cuenta desde la que se paga';
+        return 'Número de cuenta de origen';
       default:
         return 'Seleccionar cuenta';
     }
@@ -206,8 +255,6 @@ export class TransaccionesComponent implements OnInit {
         return 'Cuenta Origen *';
       case 'TRANSFERENCIA':
         return 'Cuenta Origen *';
-      case 'PAGO_SERVICIO':
-        return 'Cuenta de Pago *';
       default:
         return 'Cuenta *';
     }
@@ -220,25 +267,31 @@ export class TransaccionesComponent implements OnInit {
 
   resetForm() {
     this.newTransaccion = {
-      tipo: 'TRANSFERENCIA',
+      tipo: 'DEPOSITO',
       monto: 0,
       idCuenta: '',
       idCuentaDestino: '',
       descripcion: ''
     };
+    this.numeroCuentaOrigen = '';
+    this.numeroCuentaDestino = '';
     this.cuentasFiltradasOrigen = this.cuentas;
     this.cuentasFiltradasDestino = this.cuentas;
+    console.log('🔄 Formulario reiniciado');
   }
 
   // Obtener información de la cuenta para mostrar
-  getCuentaInfo(idCuenta: string): string {
-    const cuenta = this.cuentas.find(c => c.idCuenta === idCuenta);
+  getCuentaInfo(uuid: string): string {
+    const cuenta = this.cuentas.find(c => c.idCuenta === uuid);
     if (!cuenta) return 'Cuenta no encontrada';
 
-    return `${cuenta.numeroCuenta} - (${cuenta.tipoCuenta})`;
+    const saldo = cuenta.saldo || 0;
+    return `${cuenta.numeroCuenta} - ${cuenta.tipoCuenta} - Saldo: ${this.formatMonto(saldo)}`;
   }
 
   aplicarFiltros() {
+    console.log('🔍 Aplicando filtros:', this.filtros);
+
     let transaccionesFiltradas = [...this.transacciones];
 
     if (this.filtros.tipo) {
@@ -264,6 +317,7 @@ export class TransaccionesComponent implements OnInit {
 
     this.transaccionesFiltradas = transaccionesFiltradas;
     this.calcularEstadisticas();
+    console.log('✅ Filtros aplicados. Resultados:', transaccionesFiltradas.length);
   }
 
   limpiarFiltros() {
@@ -277,10 +331,12 @@ export class TransaccionesComponent implements OnInit {
     };
     this.transaccionesFiltradas = [...this.transacciones];
     this.calcularEstadisticas();
+    console.log('🔄 Filtros limpiados');
   }
 
   calcularEstadisticas() {
     this.estadisticas = this.transaccionService.obtenerEstadisticas(this.transaccionesFiltradas);
+    console.log('📊 Estadísticas calculadas:', this.estadisticas);
   }
 
   // Métodos auxiliares
@@ -299,14 +355,17 @@ export class TransaccionesComponent implements OnInit {
   buscarPorId(id: string) {
     if (id) {
       this.isLoading = true;
+      console.log('🔍 Buscando transacción por ID:', id);
+
       this.transaccionService.getTransaccionById(id).subscribe({
         next: (transaccion) => {
           this.transaccionesFiltradas = transaccion ? [transaccion] : [];
           this.calcularEstadisticas();
           this.isLoading = false;
+          console.log('✅ Transacción encontrada:', transaccion ? 'Sí' : 'No');
         },
         error: (error) => {
-          console.error('Error buscando transacción:', error);
+          console.error('❌ Error buscando transacción:', error);
           this.showError('Error al buscar transacción: ' + this.getErrorMessage(error));
           this.isLoading = false;
         }
@@ -319,14 +378,17 @@ export class TransaccionesComponent implements OnInit {
   buscarPorCuenta(cuentaId: string) {
     if (cuentaId) {
       this.isLoading = true;
+      console.log('🔍 Buscando transacciones por cuenta:', cuentaId);
+
       this.transaccionService.getTransaccionesByCuenta(cuentaId).subscribe({
         next: (transacciones) => {
           this.transaccionesFiltradas = transacciones;
           this.calcularEstadisticas();
           this.isLoading = false;
+          console.log('✅ Transacciones encontradas:', transacciones.length);
         },
         error: (error) => {
-          console.error('Error cargando transacciones por cuenta:', error);
+          console.error('❌ Error cargando transacciones por cuenta:', error);
           this.showError('Error al cargar transacciones: ' + this.getErrorMessage(error));
           this.isLoading = false;
         }
@@ -337,6 +399,8 @@ export class TransaccionesComponent implements OnInit {
   }
 
   searchTransaccion() {
+    console.log('🔍 Buscando transacción con ID:', this.searchId);
+
     if (this.searchId) {
       this.buscarPorId(this.searchId);
     } else {
@@ -345,16 +409,19 @@ export class TransaccionesComponent implements OnInit {
   }
 
   deleteTransaccion(id: string) {
-    if (confirm('¿Está seguro de eliminar esta transacción?')) {
+    if (confirm('¿Está seguro de eliminar esta transacción? Esta acción no se puede deshacer.')) {
       this.isLoading = true;
+      console.log('🗑️ Eliminando transacción:', id);
+
       this.transaccionService.deleteTransaccion(id).subscribe({
         next: () => {
           this.loadTransacciones();
           this.showSuccess('Transacción eliminada exitosamente!');
           this.isLoading = false;
+          console.log('✅ Transacción eliminada');
         },
         error: (error) => {
-          console.error('Error eliminando transacción:', error);
+          console.error('❌ Error eliminando transacción:', error);
           this.showError('Error al eliminar transacción: ' + this.getErrorMessage(error));
           this.isLoading = false;
         }
@@ -367,8 +434,14 @@ export class TransaccionesComponent implements OnInit {
   }
 
   private getErrorMessage(error: any): string {
+    console.log('🔍 Error detallado:', error);
+
     if (error.error?.detail) {
       return error.error.detail;
+    }
+    if (error.error?.errors) {
+      const errors = error.error.errors;
+      return Object.keys(errors).map(key => `${key}: ${errors[key]}`).join(', ');
     }
     if (error.error?.message) {
       return error.error.message;
@@ -376,18 +449,19 @@ export class TransaccionesComponent implements OnInit {
     if (error.message) {
       return error.message;
     }
+    if (typeof error === 'string') {
+      return error;
+    }
     return 'Error desconocido';
   }
 
   private showError(message: string) {
-    // En lugar de alert, podrías usar un servicio de notificaciones
-    console.error('Error:', message);
+    console.error('❌ Error:', message);
     alert('❌ ' + message);
   }
 
   private showSuccess(message: string) {
-    console.log('Éxito:', message);
+    console.log('✅ Éxito:', message);
     alert('✅ ' + message);
   }
 }
-

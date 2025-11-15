@@ -30,7 +30,6 @@ export class DashboardComponent implements OnInit {
             return;
         }
 
-        // CORRECCIÓN: Usar getCurrentUser() directamente
         this.currentUser = this.authService.getCurrentUser();
 
         console.log('🔐 Dashboard - Current User:', this.currentUser);
