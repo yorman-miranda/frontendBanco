@@ -1,0 +1,221 @@
+<div class="cuentas-container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">Gestión de Cuentas Bancarias</h1>
+            <button *ngIf="isAdmin" (click)="showForm = !showForm" class="btn btn-primary btn-sm">
+                {{ showForm ? 'Cancelar' : 'Nueva Cuenta' }}
+            </button>
+        </div>
+
+        <div class="card-body">
+            <!-- Formulario de nueva cuenta -->
+            <div *ngIf="showForm && isAdmin && !isEditing" class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Nueva Cuenta</h5>
+                </div>
+                <div class="card-body">
+                    <form (ngSubmit)="onSubmit()" #cuentaFormRef="ngForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Número de Cuenta *</label>
+                                <input type="text" class="form-control" [(ngModel)]="cuentaForm.numeroCuenta"
+                                    name="numeroCuenta" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Saldo Inicial *</label>
+                                <input type="number" class="form-control" [(ngModel)]="cuentaForm.saldo" name="saldo"
+                                    step="0.01" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Cuenta *</label>
+                                <select class="form-select" [(ngModel)]="cuentaForm.tipoCuenta" name="tipoCuenta"
+                                    required>
+                                    <option value="">Seleccionar tipo</option>
+                                    <option *ngFor="let tipo of tiposCuenta" [value]="tipo.value">
+                                        {{ tipo.label }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Estado *</label>
+                                <select class="form-select" [(ngModel)]="cuentaForm.estado" name="estado" required>
+                                    <option *ngFor="let estado of estados" [value]="estado.value">
+                                        {{ estado.label }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Cliente *</label>
+                                <select class="form-select" [(ngModel)]="cuentaForm.idCliente" name="idCliente"
+                                    required>
+                                    <option value="">Seleccionar cliente</option>
+                                    <option *ngFor="let cliente of clientes" [value]="cliente.idCliente">
+                                        {{ cliente.nombre }} - {{ cliente.documento }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" [disabled]="!cuentaFormRef.valid || isLoading"
+                                class="btn btn-success me-2">
+                                {{ isLoading ? 'Guardando...' : 'Crear Cuenta' }}
+                            </button>
+                            <button type="button" (click)="cancelForm()" class="btn btn-secondary">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal de edición centrado - CORREGIDO -->
+            <div *ngIf="isEditing && isAdmin" class="modal-backdrop fade show"></div>
+            <div *ngIf="isEditing && isAdmin" class="modal fade show d-block" tabindex="-1" role="dialog"
+                style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Editar Cuenta</h5>
+                            <button type="button" class="btn-close" (click)="cancelForm()" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form (ngSubmit)="onSubmit()" #cuentaFormRef="ngForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Número de Cuenta *</label>
+                                        <input type="text" class="form-control" [(ngModel)]="cuentaForm.numeroCuenta"
+                                            name="numeroCuenta" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Saldo *</label>
+                                        <input type="number" class="form-control" [(ngModel)]="cuentaForm.saldo"
+                                            name="saldo" step="0.01" min="0" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tipo de Cuenta *</label>
+                                        <select class="form-select" [(ngModel)]="cuentaForm.tipoCuenta"
+                                            name="tipoCuenta" required>
+                                            <option value="">Seleccionar tipo</option>
+                                            <option *ngFor="let tipo of tiposCuenta" [value]="tipo.value">
+                                                {{ tipo.label }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estado *</label>
+                                        <select class="form-select" [(ngModel)]="cuentaForm.estado" name="estado"
+                                            required>
+                                            <option *ngFor="let estado of estados" [value]="estado.value">
+                                                {{ estado.label }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Cliente *</label>
+                                        <select class="form-select" [(ngModel)]="cuentaForm.idCliente" name="idCliente"
+                                            required>
+                                            <option value="">Seleccionar cliente</option>
+                                            <option *ngFor="let cliente of clientes" [value]="cliente.idCliente">
+                                                {{ cliente.nombre }} - {{ cliente.documento }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <button type="submit" [disabled]="!cuentaFormRef.valid || isLoading"
+                                        class="btn btn-success me-2">
+                                        {{ isLoading ? 'Guardando...' : 'Actualizar Cuenta' }}
+                                    </button>
+                                    <button type="button" (click)="cancelForm()" class="btn btn-secondary">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra de búsqueda -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" [(ngModel)]="searchTerm"
+                            placeholder="Buscar por número, cliente o tipo...">
+                        <button (click)="searchCuentas()" class="btn btn-outline-primary" type="button">
+                            Buscar
+                        </button>
+                        <button (click)="limpiarBusqueda()" class="btn btn-outline-secondary" type="button">
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="isLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando cuentas...</p>
+            </div>
+
+            <!-- Tabla de cuentas -->
+            <div *ngIf="!isLoading" class="table-responsive">
+                <table *ngIf="cuentasFiltradas.length > 0" class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número de Cuenta</th>
+                            <th>Cliente</th>
+                            <th>Tipo</th>
+                            <th>Saldo</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th *ngIf="isAdmin">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let cuenta of cuentasFiltradas">
+                            <td>
+                                <strong>{{ cuenta.numeroCuenta }}</strong>
+                            </td>
+                            <td>{{ getClienteNombre(cuenta.idCliente || '') }}</td>
+                            <td>{{ getTipoCuentaLabel(cuenta.tipoCuenta) }}</td>
+                            <td>
+                                <span [class]="(cuenta.saldo || 0) >= 0 ? 'text-success' : 'text-danger'">
+                                    {{ formatSaldo(cuenta.saldo) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span [class]="getEstadoClass(cuenta.estado)">
+                                    {{ getEstadoLabel(cuenta.estado) }}
+                                </span>
+                            </td>
+                            <td>{{ formatFecha(cuenta.fecha_creacion || 'N/A')}}</td>
+                            <td *ngIf="isAdmin">
+                                <div class="btn-group btn-group-sm">
+                                    <button (click)="editCuenta(cuenta)" class="btn btn-warning">
+                                        Editar
+                                    </button>
+                                    <button (click)="deleteCuenta(cuenta.idCuenta)" class="btn btn-danger">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div *ngIf="cuentasFiltradas.length === 0" class="text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-piggy-bank fa-3x mb-3"></i>
+                        <p class="h5">No se encontraron cuentas</p>
+                        <p *ngIf="searchTerm" class="text-muted">
+                            Intenta con otros términos de búsqueda
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
