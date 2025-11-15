@@ -1,0 +1,93 @@
+<div class="sidebar">
+    <!-- Header con información del usuario -->
+    <div class="sidebar-header">
+        <h2>Sistema Bancario</h2>
+        <div class="user-info" *ngIf="currentUser">
+            <div class="user-avatar">
+                {{ getUserInitials() }}
+            </div>
+            <div class="user-details">
+                <span class="user-name">{{ getFullName() }}</span>
+                <span class="user-username">@{{ currentUser.username }}</span>
+                <span class="user-role" *ngIf="isAdmin">Administrador</span>
+                <span class="user-role" *ngIf="!isAdmin">Usuario</span>
+            </div>
+        </div>
+        <div class="user-info" *ngIf="!currentUser">
+            <div class="user-avatar">
+                U
+            </div>
+            <div class="user-details">
+                <span class="user-name">Usuario</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú de navegación -->
+    <nav class="sidebar-nav">
+        <ul>
+            <li>
+                <button (click)="navigateTo('/dashboard')" class="nav-button">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </button>
+            </li>
+            <li>
+                <button (click)="navigateTo('/clientes')" class="nav-button">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Clientes</span>
+                </button>
+            </li>
+
+            <!-- Solo para administradores -->
+            <ng-container *ngIf="isAdmin">
+                <li>
+                    <button (click)="navigateTo('/empleados')" class="nav-button">
+                        <span class="nav-icon">💼</span>
+                        <span class="nav-text">Empleados</span>
+                    </button>
+                </li>
+                <li>
+                    <button (click)="navigateTo('/usuarios')" class="nav-button">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">Usuarios</span>
+                    </button>
+                </li>
+                <li>
+                    <button (click)="navigateTo('/sucursales')" class="nav-button">
+                        <span class="nav-icon">🏢</span>
+                        <span class="nav-text">Sucursales</span>
+                    </button>
+                </li>
+            </ng-container>
+
+            <li>
+                <button (click)="navigateTo('/cuentas')" class="nav-button">
+                    <span class="nav-icon">💳</span>
+                    <span class="nav-text">Cuentas</span>
+                </button>
+            </li>
+            <li>
+                <button (click)="navigateTo('/transacciones')" class="nav-button">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Transacciones</span>
+                </button>
+            </li>
+            <li>
+                <button (click)="navigateTo('/operaciones')" class="nav-button">
+                    <span class="nav-icon">💰</span>
+                    <span class="nav-text">Operaciones</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sección de logout -->
+    <div class="logout-section">
+        <hr class="divider">
+        <button (click)="logoutUser()" class="logout-button">
+            <span class="logout-icon">🚪</span>
+            <span class="logout-text">Cerrar Sesión</span>
+        </button>
+    </div>
+</div>
