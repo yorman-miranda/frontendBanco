@@ -1,0 +1,194 @@
+<div class="clientes-container">
+    <h1>Gestión de Clientes</h1>
+
+    <div class="admin-warning" *ngIf="!isAdmin">
+        <p>⚠️ Solo los administradores pueden gestionar clientes</p>
+    </div>
+
+    <div class="actions-bar">
+        <button *ngIf="isAdmin" (click)="showForm = !showForm" class="btn-primary">
+            {{ showForm ? 'Cancelar' : 'Agregar Cliente' }}
+        </button>
+
+        <div class="search-container">
+            <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar clientes...">
+            <button (click)="searchClientes()" class="btn-primary">Buscar</button>
+            <button (click)="limpiarFiltros()" class="btn-secondary">Limpiar</button>
+        </div>
+    </div>
+
+    <!-- Formulario de nuevo cliente -->
+    <div *ngIf="showForm && isAdmin && !isEditing" class="form-container">
+        <h3>Nuevo Cliente</h3>
+        <form (ngSubmit)="onSubmit()" #clienteFormRef="ngForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" [(ngModel)]="clienteForm.nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Documento *</label>
+                    <input type="text" [(ngModel)]="clienteForm.documento" name="documento" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" [(ngModel)]="clienteForm.email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" [(ngModel)]="clienteForm.telefono" name="telefono">
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label>Dirección</label>
+                <input type="text" [(ngModel)]="clienteForm.direccion" name="direccion">
+            </div>
+
+            <div class="form-group">
+                <label>Sucursal</label>
+                <select [(ngModel)]="clienteForm.idSucursal" name="idSucursal">
+                    <option value="">Seleccionar sucursal</option>
+                    <option *ngFor="let sucursal of sucursales" [value]="sucursal.idSucursal">
+                        {{ sucursal.nombreSucursal }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" [disabled]="!clienteFormRef.valid || isLoading" class="btn-primary">
+                    {{ isLoading ? 'Guardando...' : 'Guardar' }}
+                </button>
+                <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal de edición centrado -->
+    <div *ngIf="isEditing && isAdmin" class="modal-backdrop fade show"></div>
+    <div *ngIf="isEditing && isAdmin" class="modal fade show d-block" tabindex="-1" role="dialog"
+        style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Cliente</h5>
+                    <button type="button" class="btn-close" (click)="cancelForm()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form (ngSubmit)="onSubmit()" #clienteFormRef="ngForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre *</label>
+                                <input type="text" class="form-control" [(ngModel)]="clienteForm.nombre" name="nombre"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Documento *</label>
+                                <input type="text" class="form-control" [(ngModel)]="clienteForm.documento"
+                                    name="documento" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email *</label>
+                                <input type="email" class="form-control" [(ngModel)]="clienteForm.email" name="email"
+                                    required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="text" class="form-control" [(ngModel)]="clienteForm.telefono"
+                                    name="telefono">
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Dirección</label>
+                            <input type="text" class="form-control" [(ngModel)]="clienteForm.direccion"
+                                name="direccion">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sucursal</label>
+                            <select class="form-select" [(ngModel)]="clienteForm.idSucursal" name="idSucursal">
+                                <option value="">Seleccionar sucursal</option>
+                                <option *ngFor="let sucursal of sucursales" [value]="sucursal.idSucursal">
+                                    {{ sucursal.nombreSucursal }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" [disabled]="!clienteFormRef.valid || isLoading" class="btn-primary">
+                                {{ isLoading ? 'Guardando...' : 'Actualizar Cliente' }}
+                            </button>
+                            <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-container">
+        <h4>Filtros</h4>
+        <div class="filter-row">
+            <input type="text" [(ngModel)]="filtros.nombre" placeholder="Nombre">
+            <input type="text" [(ngModel)]="filtros.documento" placeholder="Documento">
+            <input type="text" [(ngModel)]="filtros.email" placeholder="Email">
+            <select [(ngModel)]="filtros.idSucursal">
+                <option value="">Todas las sucursales</option>
+                <option *ngFor="let sucursal of sucursales" [value]="sucursal.idSucursal">
+                    {{ sucursal.nombreSucursal }}
+                </option>
+            </select>
+            <button (click)="aplicarFiltros()" class="btn-primary">Aplicar Filtros</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="loading">
+        <p>Cargando clientes...</p>
+    </div>
+
+    <!-- Tabla de clientes -->
+    <div *ngIf="!isLoading" class="table-container">
+        <table *ngIf="clientesFiltrados.length > 0">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Documento</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Sucursal</th>
+                    <th>Fecha Creación</th>
+                    <th *ngIf="isAdmin">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let cliente of clientesFiltrados">
+                    <td>{{ cliente.nombre }}</td>
+                    <td>{{ cliente.documento }}</td>
+                    <td>{{ cliente.email }}</td>
+                    <td>{{ cliente.telefono || '-' }}</td>
+                    <td>{{ cliente.direccion || '-' }}</td>
+                    <td>{{ getSucursalNombre(cliente.idSucursal) }}</td>
+                    <td>{{ formatFecha(cliente.fecha_creacion) }}</td>
+                    <td *ngIf="isAdmin" class="actions">
+                        <button (click)="editCliente(cliente)" class="btn-edit">Editar</button>
+                        <button (click)="deleteCliente(cliente.idCliente)" class="btn-delete">Eliminar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div *ngIf="clientesFiltrados.length === 0" class="no-data">
+            <p>No se encontraron clientes.</p>
+        </div>
+    </div>
+</div>

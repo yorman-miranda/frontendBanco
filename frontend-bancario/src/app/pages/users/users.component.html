@@ -1,0 +1,156 @@
+<div class="usuarios-container">
+    <h1>Gestión de Usuarios</h1>
+
+    <div class="admin-warning" *ngIf="!isAdmin">
+        <p>⚠️ Solo los administradores pueden gestionar usuarios</p>
+    </div>
+
+    <!-- Solo mostrar botones de acción si es admin -->
+    <div *ngIf="isAdmin" class="actions-bar">
+        <button (click)="showForm = !showForm" class="btn-primary">
+            {{ showForm ? 'Cancelar' : 'Agregar Usuario' }}
+        </button>
+    </div>
+
+    <!-- Formulario de nuevo usuario (solo para admins) -->
+    <div *ngIf="showForm && isAdmin && !isEditing" class="form-container">
+        <h3>Nuevo Usuario</h3>
+        <form (ngSubmit)="onSubmit()" #usuarioForm="ngForm">
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newUser.firstName" name="firstName" placeholder="Nombre" required>
+            </div>
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newUser.lastName" name="lastName" placeholder="Apellido" required>
+            </div>
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newUser.username" name="username" placeholder="Usuario" required>
+            </div>
+            <div class="form-group">
+                <input type="password" [(ngModel)]="newUser.password" name="password" placeholder="Contraseña" required
+                    minlength="8">
+            </div>
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" [(ngModel)]="newUser.es_admin" name="es_admin">
+                    Es Administrador
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" [disabled]="!usuarioForm.valid || isLoading" class="btn-primary">
+                    {{ isLoading ? 'Creando...' : 'Guardar' }}
+                </button>
+                <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal de edición centrado (solo para admins) - CORREGIDO -->
+    <div *ngIf="isEditing && isAdmin" class="modal-backdrop fade show"></div>
+    <div *ngIf="isEditing && isAdmin" class="modal fade show d-block" tabindex="-1" role="dialog"
+        style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Usuario</h5>
+                    <button type="button" class="btn-close" (click)="cancelForm()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form (ngSubmit)="onUpdate()" #editUsuarioForm="ngForm">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" class="form-control" [(ngModel)]="editUser.firstName"
+                                name="editFirstName" placeholder="Nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido *</label>
+                            <input type="text" class="form-control" [(ngModel)]="editUser.lastName" name="editLastName"
+                                placeholder="Apellido" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Usuario *</label>
+                            <input type="text" class="form-control" [(ngModel)]="editUser.username" name="editUsername"
+                                placeholder="Usuario" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="password" class="form-control" [(ngModel)]="editUser.password"
+                                name="editPassword" placeholder="Nueva contraseña (dejar en blanco para no cambiar)"
+                                minlength="8">
+                            <small class="text-muted">Dejar en blanco si no deseas cambiar la contraseña</small>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" [(ngModel)]="editUser.es_admin" name="editEs_admin">
+                                Es Administrador
+                            </label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" [(ngModel)]="editUser.activo" name="editActivo">
+                                Usuario Activo
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" [disabled]="!editUsuarioForm.valid || isLoading" class="btn-primary">
+                                {{ isLoading ? 'Actualizando...' : 'Actualizar Usuario' }}
+                            </button>
+                            <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" [(ngModel)]="searchUsername" placeholder="Buscar por usuario">
+        <button (click)="searchUsuario()" class="btn-primary">Buscar</button>
+        <button (click)="loadUsuarios()" class="btn-secondary">Mostrar Todos</button>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">Cargando usuarios...</div>
+
+    <table *ngIf="!isLoading && usuarios.length > 0">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Usuario</th>
+                <th>Estado</th>
+                <th>Rol</th>
+                <!-- Solo mostrar columna de acciones si es admin -->
+                <th *ngIf="isAdmin">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let usuario of usuarios">
+                <td>{{ usuario.firstName }}</td>
+                <td>{{ usuario.lastName }}</td>
+                <td>{{ usuario.username }}</td>
+                <td>
+                    <span [class]="usuario.activo ? 'status-active' : 'status-inactive'">
+                        {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                </td>
+                <td>
+                    <span [class]="usuario.es_admin ? 'role-admin' : 'role-user'">
+                        {{ usuario.es_admin ? 'Administrador' : 'Usuario' }}
+                    </span>
+                </td>
+                <!-- Solo mostrar botones de acción si es admin -->
+                <td *ngIf="isAdmin">
+                    <button (click)="editUsuario(usuario)" class="btn-edit">Editar</button>
+                    <button (click)="toggleUsuarioEstado(usuario)"
+                        [class]="usuario.activo ? 'btn-warning' : 'btn-success'">
+                        {{ usuario.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    <button (click)="deleteUsuario(usuario.idUser)" class="btn-delete">Eliminar</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div *ngIf="!isLoading && usuarios.length === 0" class="no-data">
+        No se encontraron usuarios.
+    </div>
+</div>

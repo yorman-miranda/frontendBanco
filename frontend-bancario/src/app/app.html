@@ -1,0 +1,10 @@
+<div class="app-container">
+  <!-- Sidebar solo si está autenticado -->
+  <app-sidebar *ngIf="shouldShowSidebar()" (logout)="onLogout()">
+  </app-sidebar>
+
+  <!-- Contenido principal -->
+  <main class="main-content" [class.with-sidebar]="shouldShowSidebar()">
+    <router-outlet></router-outlet>
+  </main>
+</div>

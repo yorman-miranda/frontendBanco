@@ -1,0 +1,66 @@
+<div class="operaciones-container">
+    <h1>Operaciones Bancarias</h1>
+
+    <div class="user-info">
+        <p>Bienvenido, {{ currentUser?.firstName }} {{ currentUser?.lastName }}</p>
+    </div>
+
+    <div class="tabs">
+        <button [class.active]="activeTab === 'deposito'" (click)="setActiveTab('deposito')" class="tab-button">
+            💰 Deposito
+        </button>
+        <button [class.active]="activeTab === 'retiro'" (click)="setActiveTab('retiro')" class="tab-button">
+            💸 Retiro
+        </button>
+    </div>
+
+    <!-- Formulario de Depósito -->
+    <div *ngIf="activeTab === 'deposito'" class="operation-form">
+        <h3>Realizar Depósito</h3>
+        <form (ngSubmit)="realizarDeposito()" #depositoForm="ngForm">
+            <div class="form-group">
+                <label for="depositoCuenta">Numero de Cuenta:</label>
+                <input type="text" id="depositoCuenta" [(ngModel)]="depositoData.idCuenta" name="idCuenta" required
+                    placeholder="Ingrese numero de Cuenta">
+            </div>
+            <div class="form-group">
+                <label for="depositoMonto">Monto:</label>
+                <input type="number" id="depositoMonto" [(ngModel)]="depositoData.monto" name="monto" required
+                    min="0.01" step="0.01" placeholder="0.00">
+            </div>
+            <button type="submit" [disabled]="!depositoForm.valid || isLoading" class="btn-primary btn-large">
+                {{ isLoading ? 'Procesando...' : 'Realizar Depósito' }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Formulario de Retiro -->
+    <div *ngIf="activeTab === 'retiro'" class="operation-form">
+        <h3>Realizar Retiro</h3>
+        <form (ngSubmit)="realizarRetiro()" #retiroForm="ngForm">
+            <div class="form-group">
+                <label for="retiroCuenta">Numero de Cuenta:</label>
+                <input type="text" id="retiroCuenta" [(ngModel)]="retiroData.idCuenta" name="idCuenta" required
+                    placeholder="Ingrese numero de Cuenta">
+            </div>
+            <div class="form-group">
+                <label for="retiroMonto">Monto:</label>
+                <input type="number" id="retiroMonto" [(ngModel)]="retiroData.monto" name="monto" required min="0.01"
+                    step="0.01" placeholder="0.00">
+            </div>
+            <button type="submit" [disabled]="!retiroForm.valid || isLoading" class="btn-danger btn-large">
+                {{ isLoading ? 'Procesando...' : 'Realizar Retiro' }}
+            </button>
+        </form>
+    </div>
+
+    <div class="operation-info">
+        <h4>Información Importante:</h4>
+        <ul>
+            <li>✅ Asegúrese de tener los IDs de cuenta correctos</li>
+            <li>✅ Verifique el monto antes de confirmar la operación</li>
+            <li>✅ Las operaciones son inmediatas e irreversibles</li>
+            <li>❌ No comparta sus credenciales de acceso</li>
+        </ul>
+    </div>
+</div>
