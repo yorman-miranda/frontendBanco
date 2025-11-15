@@ -1,0 +1,206 @@
+<div class="operaciones-container">
+    <h1>Operaciones Bancarias</h1>
+
+    <div class="user-info">
+        <p>Bienvenido, {{ currentUser?.firstName }} {{ currentUser?.lastName }}</p>
+        <small>ID: {{ currentUser?.id }}</small>
+    </div>
+
+    <!-- Botón de debug (solo desarrollo) -->
+    <button *ngIf="false" (click)="debugCuentas()" style="background: #ffc107; color: black; margin-bottom: 20px;">
+        🐛 Debug Cuentas
+    </button>
+
+    <div class="tabs">
+        <button [class.active]="activeTab === 'deposito'" (click)="setActiveTab('deposito')" class="tab-button">
+            💰 Depósito
+        </button>
+        <button [class.active]="activeTab === 'retiro'" (click)="setActiveTab('retiro')" class="tab-button">
+            💸 Retiro
+        </button>
+        <button [class.active]="activeTab === 'transferencia'" (click)="setActiveTab('transferencia')"
+            class="tab-button">
+            🔄 Transferencia
+        </button>
+    </div>
+
+    <!-- Formulario de Depósito -->
+    <div *ngIf="activeTab === 'deposito'" class="operation-form">
+        <h3>Realizar Depósito</h3>
+        <form (ngSubmit)="realizarDeposito()" #depositoForm="ngForm">
+            <div class="form-group">
+                <label for="depositoCuenta">Número de Cuenta:</label>
+                <input type="text" id="depositoCuenta" [(ngModel)]="depositoData.numeroCuenta" name="numeroCuenta"
+                    required placeholder="Ingrese número de cuenta" [attr.list]="'cuentas-deposito'">
+                <datalist id="cuentas-deposito">
+                    <option *ngFor="let cuenta of getCuentasFiltradas(depositoData.numeroCuenta)"
+                        [value]="cuenta.numeroCuenta">
+                        {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo || 0)
+                        }}
+                    </option>
+                </datalist>
+                <div *ngIf="depositoData.numeroCuenta && buscarCuentaPorNumero(depositoData.numeroCuenta)"
+                    class="cuenta-info">
+                    ✅ Cuenta válida: {{ getCuentaInfo(depositoData.numeroCuenta) }}
+                </div>
+                <div *ngIf="depositoData.numeroCuenta && !buscarCuentaPorNumero(depositoData.numeroCuenta)"
+                    class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="depositoMonto">Monto:</label>
+                <input type="number" id="depositoMonto" [(ngModel)]="depositoData.monto" name="monto" required
+                    min="0.01" step="0.01" placeholder="0.00">
+                <small *ngIf="depositoData.monto > 0" class="info-text">
+                    💰 {{ formatMonto(depositoData.monto) }}
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="depositoDescripcion">Descripción (opcional):</label>
+                <input type="text" id="depositoDescripcion" [(ngModel)]="depositoData.descripcion" name="descripcion"
+                    placeholder="Descripción del depósito">
+            </div>
+            <button type="submit"
+                [disabled]="!depositoForm.valid || isLoading || !buscarCuentaPorNumero(depositoData.numeroCuenta)"
+                class="btn-primary btn-large">
+                {{ isLoading ? 'Procesando...' : 'Realizar Depósito' }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Formulario de Retiro -->
+    <div *ngIf="activeTab === 'retiro'" class="operation-form">
+        <h3>Realizar Retiro</h3>
+        <form (ngSubmit)="realizarRetiro()" #retiroForm="ngForm">
+            <div class="form-group">
+                <label for="retiroCuenta">Número de Cuenta:</label>
+                <input type="text" id="retiroCuenta" [(ngModel)]="retiroData.numeroCuenta" name="numeroCuenta" required
+                    placeholder="Ingrese número de cuenta" [attr.list]="'cuentas-retiro'">
+                <datalist id="cuentas-retiro">
+                    <option *ngFor="let cuenta of getCuentasFiltradas(retiroData.numeroCuenta)"
+                        [value]="cuenta.numeroCuenta">
+                        {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo || 0)
+                        }}
+                    </option>
+                </datalist>
+                <div *ngIf="retiroData.numeroCuenta && buscarCuentaPorNumero(retiroData.numeroCuenta)"
+                    class="cuenta-info">
+                    ✅ Cuenta válida: {{ getCuentaInfo(retiroData.numeroCuenta) }}
+                </div>
+                <div *ngIf="retiroData.numeroCuenta && !buscarCuentaPorNumero(retiroData.numeroCuenta)"
+                    class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="retiroMonto">Monto:</label>
+                <input type="number" id="retiroMonto" [(ngModel)]="retiroData.monto" name="monto" required min="0.01"
+                    step="0.01" placeholder="0.00">
+                <small *ngIf="retiroData.monto > 0" class="info-text">
+                    💸 {{ formatMonto(retiroData.monto) }}
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="retiroDescripcion">Descripción (opcional):</label>
+                <input type="text" id="retiroDescripcion" [(ngModel)]="retiroData.descripcion" name="descripcion"
+                    placeholder="Descripción del retiro">
+            </div>
+            <button type="submit"
+                [disabled]="!retiroForm.valid || isLoading || !buscarCuentaPorNumero(retiroData.numeroCuenta)"
+                class="btn-danger btn-large">
+                {{ isLoading ? 'Procesando...' : 'Realizar Retiro' }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Formulario de Transferencia -->
+    <div *ngIf="activeTab === 'transferencia'" class="operation-form">
+        <h3>Realizar Transferencia</h3>
+        <form (ngSubmit)="realizarTransferencia()" #transferenciaForm="ngForm">
+            <div class="form-group">
+                <label for="transferenciaCuentaOrigen">Cuenta Origen:</label>
+                <input type="text" id="transferenciaCuentaOrigen" [(ngModel)]="transferenciaData.numeroCuentaOrigen"
+                    name="numeroCuentaOrigen" required placeholder="Número de cuenta origen"
+                    [attr.list]="'cuentas-origen'">
+                <datalist id="cuentas-origen">
+                    <ng-container *ngFor="let cuenta of getCuentasFiltradas(transferenciaData.numeroCuentaOrigen)">
+                        <option *ngIf="cuenta.numeroCuenta !== transferenciaData.numeroCuentaDestino"
+                            [value]="cuenta.numeroCuenta">
+                            {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo ||
+                            0) }}
+                        </option>
+                    </ng-container>
+                </datalist>
+                <div *ngIf="transferenciaData.numeroCuentaOrigen && buscarCuentaPorNumero(transferenciaData.numeroCuentaOrigen)"
+                    class="cuenta-info">
+                    ✅ Cuenta válida: {{ getCuentaInfo(transferenciaData.numeroCuentaOrigen) }}
+                </div>
+                <div *ngIf="transferenciaData.numeroCuentaOrigen && !buscarCuentaPorNumero(transferenciaData.numeroCuentaOrigen)"
+                    class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="transferenciaCuentaDestino">Cuenta Destino:</label>
+                <input type="text" id="transferenciaCuentaDestino" [(ngModel)]="transferenciaData.numeroCuentaDestino"
+                    name="numeroCuentaDestino" required placeholder="Número de cuenta destino"
+                    [attr.list]="'cuentas-destino'">
+                <datalist id="cuentas-destino">
+                    <ng-container *ngFor="let cuenta of getCuentasFiltradas(transferenciaData.numeroCuentaDestino)">
+                        <option *ngIf="cuenta.numeroCuenta !== transferenciaData.numeroCuentaOrigen"
+                            [value]="cuenta.numeroCuenta">
+                            {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo ||
+                            0) }}
+                        </option>
+                    </ng-container>
+                </datalist>
+                <div *ngIf="transferenciaData.numeroCuentaDestino && buscarCuentaPorNumero(transferenciaData.numeroCuentaDestino)"
+                    class="cuenta-info">
+                    ✅ Cuenta válida: {{ getCuentaInfo(transferenciaData.numeroCuentaDestino) }}
+                </div>
+                <div *ngIf="transferenciaData.numeroCuentaDestino && !buscarCuentaPorNumero(transferenciaData.numeroCuentaDestino)"
+                    class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
+                </div>
+                <div *ngIf="transferenciaData.numeroCuentaOrigen && transferenciaData.numeroCuentaDestino && 
+                           transferenciaData.numeroCuentaOrigen === transferenciaData.numeroCuentaDestino"
+                    class="error-text">
+                    ⚠️ No se puede transferir a la misma cuenta
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="transferenciaMonto">Monto:</label>
+                <input type="number" id="transferenciaMonto" [(ngModel)]="transferenciaData.monto" name="monto" required
+                    min="0.01" step="0.01" placeholder="0.00">
+                <small *ngIf="transferenciaData.monto > 0" class="info-text">
+                    🔄 {{ formatMonto(transferenciaData.monto) }}
+                </small>
+            </div>
+            <div class="form-group">
+                <label for="transferenciaDescripcion">Descripción (opcional):</label>
+                <input type="text" id="transferenciaDescripcion" [(ngModel)]="transferenciaData.descripcion"
+                    name="descripcion" placeholder="Descripción de la transferencia">
+            </div>
+            <button type="submit" [disabled]="!transferenciaForm.valid || isLoading || 
+                               !buscarCuentaPorNumero(transferenciaData.numeroCuentaOrigen) || 
+                               !buscarCuentaPorNumero(transferenciaData.numeroCuentaDestino) ||
+                               transferenciaData.numeroCuentaOrigen === transferenciaData.numeroCuentaDestino"
+                class="btn-primary btn-large">
+                {{ isLoading ? 'Procesando...' : 'Realizar Transferencia' }}
+            </button>
+        </form>
+    </div>
+
+    <div class="operation-info">
+        <h4>Información Importante:</h4>
+        <ul>
+            <li>✅ Ingrese el <strong>número de cuenta</strong> (no el ID)</li>
+            <li>✅ Seleccione la cuenta de las sugerencias para validar</li>
+            <li>✅ Verifique el monto antes de confirmar</li>
+            <li>✅ Los saldos se actualizan automáticamente</li>
+            <li>❌ Las operaciones son inmediatas e irreversibles</li>
+            <li>❌ No comparta sus credenciales de acceso</li>
+        </ul>
+    </div>
+</div>

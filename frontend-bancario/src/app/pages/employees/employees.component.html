@@ -1,0 +1,129 @@
+<div class="empleados-container">
+    <h1>Gestión de Empleados</h1>
+
+    <div class="admin-warning" *ngIf="!isAdmin">
+        <p>⚠️ Solo los administradores pueden gestionar empleados</p>
+    </div>
+
+    <button *ngIf="isAdmin" (click)="showForm = !showForm" class="btn-primary">
+        {{ showForm ? 'Cancelar' : 'Agregar Empleado' }}
+    </button>
+
+    <!-- Formulario de nuevo empleado -->
+    <div *ngIf="showForm && isAdmin && !isEditing" class="form-container">
+        <h3>Nuevo Empleado</h3>
+        <form (ngSubmit)="onSubmit()" #empleadoForm="ngForm">
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newEmpleado.nombre" name="nombre" placeholder="Nombre" required>
+            </div>
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newEmpleado.apellido" name="apellido" placeholder="Apellido" required>
+            </div>
+            <div class="form-group">
+                <select [(ngModel)]="newEmpleado.cargo" name="cargo" required>
+                    <option value="">Seleccionar Cargo</option>
+                    <option *ngFor="let cargo of cargos" [value]="cargo">{{ cargo }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newEmpleado.idSucursal" name="idSucursal" placeholder="ID Sucursal">
+            </div>
+            <div class="form-group">
+                <input type="text" [(ngModel)]="newEmpleado.idUsuario" name="idUsuario" placeholder="ID Usuario">
+            </div>
+            <div class="form-actions">
+                <button type="submit" [disabled]="!empleadoForm.valid || isLoading" class="btn-primary">
+                    {{ isLoading ? 'Creando...' : 'Guardar' }}
+                </button>
+                <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal de edición centrado -->
+    <div *ngIf="isEditing && isAdmin" class="modal-backdrop fade show"></div>
+    <div *ngIf="isEditing && isAdmin" class="modal fade show d-block" tabindex="-1" role="dialog"
+        style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Empleado</h5>
+                    <button type="button" class="btn-close" (click)="cancelForm()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form (ngSubmit)="onUpdate()" #editEmpleadoForm="ngForm">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" class="form-control" [(ngModel)]="editarEmpleado.nombre"
+                                name="editNombre" placeholder="Nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellido *</label>
+                            <input type="text" class="form-control" [(ngModel)]="editarEmpleado.apellido"
+                                name="editApellido" placeholder="Apellido" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cargo *</label>
+                            <select class="form-select" [(ngModel)]="editarEmpleado.cargo" name="editCargo" required>
+                                <option value="">Seleccionar Cargo</option>
+                                <option *ngFor="let cargo of cargos" [value]="cargo">{{ cargo }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ID Sucursal</label>
+                            <input type="text" class="form-control" [(ngModel)]="editarEmpleado.idSucursal"
+                                name="editIdSucursal" placeholder="ID Sucursal">
+                        </div>
+                        <div class="form-group">
+                            <label>ID Usuario</label>
+                            <input type="text" class="form-control" [(ngModel)]="editarEmpleado.idUsuario"
+                                name="editIdUsuario" placeholder="ID Usuario">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" [disabled]="!editEmpleadoForm.valid || isLoading" class="btn-primary">
+                                {{ isLoading ? 'Actualizando...' : 'Actualizar Empleado' }}
+                            </button>
+                            <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" [(ngModel)]="searchId" placeholder="Buscar por ID">
+        <button (click)="searchEmpleado()" class="btn-primary">Buscar</button>
+        <button (click)="loadEmpleados()" class="btn-secondary">Mostrar Todos</button>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">Cargando empleados...</div>
+
+    <table *ngIf="!isLoading && empleados.length > 0">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Cargo</th>
+                <th>Sucursal</th>
+                <th *ngIf="isAdmin">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let empleado of empleados">
+                <td>{{ empleado.nombre }}</td>
+                <td>{{ empleado.apellido }}</td>
+                <td>{{ empleado.cargo }}</td>
+                <td>{{ empleado.idSucursal }}</td>
+                <td *ngIf="isAdmin">
+                    <button (click)="editEmpleado(empleado)" class="btn-edit">Editar</button>
+                    <button (click)="deleteEmpleado(empleado.idEmpleado)" class="btn-delete">Eliminar</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div *ngIf="!isLoading && empleados.length === 0" class="no-data">
+        No se encontraron empleados.
+    </div>
+</div>

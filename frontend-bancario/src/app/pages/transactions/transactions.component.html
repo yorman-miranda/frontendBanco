@@ -1,0 +1,199 @@
+<div class="transacciones-container">
+    <h1>Gestión de Transacciones</h1>
+
+    <button (click)="showForm = !showForm" class="btn-primary">
+        {{ showForm ? 'Cancelar' : 'Nueva Transacción' }}
+    </button>
+
+    <!-- Formulario Mejorado -->
+    <div *ngIf="showForm" class="form-container">
+        <h3>Nueva Transacción</h3>
+        <form (ngSubmit)="onSubmit()" #transaccionForm="ngForm">
+            <div class="form-group">
+                <label>Tipo de Transacción *</label>
+                <select [(ngModel)]="newTransaccion.tipo" name="tipo" required (change)="resetForm()">
+                    <option value="">Seleccionar Tipo</option>
+                    <option *ngFor="let tipo of tiposTransaccion" [value]="tipo.value">
+                        {{ tipo.icon }} {{ tipo.label }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Monto *</label>
+                <input type="number" [(ngModel)]="newTransaccion.monto" name="monto" placeholder="0.00" required
+                    min="0.01" step="0.01" [class.error]="newTransaccion.monto <= 0">
+                <small *ngIf="newTransaccion.monto <= 0" class="error-text">
+                    El monto debe ser mayor a 0
+                </small>
+                <small *ngIf="newTransaccion.monto > 0" class="info-text">
+                    {{ getTipoIcon(newTransaccion.tipo) }}
+                    {{ transaccionService.getSignoMonto(newTransaccion.tipo) }}{{ newTransaccion.monto | currency:'MXN'
+                    }}
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>{{ getLabelOrigen() }}</label>
+                <input type="text" [(ngModel)]="numeroCuentaOrigen" name="numeroCuentaOrigen"
+                    [placeholder]="getPlaceholderOrigen()"
+                    (input)="onNumeroCuentaChange(numeroCuentaOrigen, 'origen'); filtrarCuentas(numeroCuentaOrigen, 'origen')"
+                    required [attr.list]="'cuentas-origen'">
+                <datalist id="cuentas-origen">
+                    <option *ngFor="let cuenta of cuentasFiltradasOrigen" [value]="cuenta.numeroCuenta">
+                        {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo || 0)
+                        }}
+                    </option>
+                </datalist>
+                <div *ngIf="newTransaccion.idCuenta" class="cuenta-info">
+                    ✅ Cuenta válida: {{ getCuentaInfo(newTransaccion.idCuenta) }}
+                </div>
+                <div *ngIf="numeroCuentaOrigen && !newTransaccion.idCuenta" class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
+                </div>
+            </div>
+
+            <div *ngIf="mostrarCampoDestino()" class="form-group">
+                <label>Cuenta Destino *</label>
+                <input type="text" [(ngModel)]="numeroCuentaDestino" name="numeroCuentaDestino"
+                    placeholder="Número de cuenta destino"
+                    (input)="onNumeroCuentaChange(numeroCuentaDestino, 'destino'); filtrarCuentas(numeroCuentaDestino, 'destino')"
+                    required [attr.list]="'cuentas-destino'">
+                <datalist id="cuentas-destino">
+                    <option *ngFor="let cuenta of cuentasFiltradasDestino" [value]="cuenta.numeroCuenta">
+                        {{ cuenta.numeroCuenta }} ({{ cuenta.tipoCuenta }}) - Saldo: {{ formatMonto(cuenta.saldo || 0)
+                        }}
+                    </option>
+                </datalist>
+                <div *ngIf="newTransaccion.idCuentaDestino" class="cuenta-info">
+                    ✅ Cuenta válida: {{ getCuentaInfo(newTransaccion.idCuentaDestino) }}
+                </div>
+                <div *ngIf="numeroCuentaDestino && !newTransaccion.idCuentaDestino" class="error-text">
+                    ❌ Cuenta no encontrada. Seleccione una cuenta de la lista.
+                </div>
+                <div *ngIf="newTransaccion.idCuenta === newTransaccion.idCuentaDestino && newTransaccion.idCuenta"
+                    class="error-text">
+                    ⚠️ No se puede transferir a la misma cuenta
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea [(ngModel)]="newTransaccion.descripcion" name="descripcion"
+                    placeholder="Descripción de la transacción (opcional)" rows="3"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                    [disabled]="!transaccionForm.valid || isLoading || !newTransaccion.idCuenta || (mostrarCampoDestino() && !newTransaccion.idCuentaDestino)"
+                    class="btn-primary">
+                    {{ isLoading ? 'Procesando...' : 'Realizar Transacción' }}
+                </button>
+                <button type="button" (click)="cancelForm()" class="btn-secondary">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Búsqueda y Filtros -->
+    <div class="search-container">
+        <input type="text" [(ngModel)]="searchId" placeholder="Buscar por ID de transacción">
+        <button (click)="searchTransaccion()" class="btn-primary">Buscar</button>
+        <button (click)="loadTransacciones()" class="btn-secondary">Mostrar Todas</button>
+    </div>
+
+    <div class="filter-container">
+        <input type="text" #cuentafilter placeholder="Filtrar por número de cuenta">
+        <button (click)="buscarPorCuenta(cuentafilter.value)" class="btn-primary">
+            Filtrar por Cuenta
+        </button>
+        <button (click)="limpiarFiltros()" class="btn-secondary">Limpiar Filtros</button>
+    </div>
+
+    <!-- Filtros Avanzados -->
+    <div class="filtros-avanzados">
+        <h4>Filtros Avanzados</h4>
+        <div class="filtros-row">
+            <select [(ngModel)]="filtros.tipo">
+                <option value="">Todos los tipos</option>
+                <option *ngFor="let tipo of tiposTransaccion" [value]="tipo.value">
+                    {{ tipo.label }}
+                </option>
+            </select>
+            <input type="date" [(ngModel)]="filtros.fechaInicio" placeholder="Fecha inicio">
+            <input type="date" [(ngModel)]="filtros.fechaFin" placeholder="Fecha fin">
+            <button (click)="aplicarFiltros()" class="btn-primary">Aplicar Filtros</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="loading">
+        <p>Cargando transacciones...</p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div *ngIf="estadisticas && !isLoading" class="estadisticas-container">
+        <h3>Estadísticas</h3>
+        <div class="estadisticas-grid">
+            <div class="estadistica-card">
+                <h4>Total Transacciones</h4>
+                <p class="estadistica-number">{{ estadisticas.totalTransacciones }}</p>
+            </div>
+            <div class="estadistica-card">
+                <h4>Depósitos</h4>
+                <p class="estadistica-number text-success">{{ formatMonto(estadisticas.totalDepositos) }}</p>
+            </div>
+            <div class="estadistica-card">
+                <h4>Retiros</h4>
+                <p class="estadistica-number text-danger">{{ formatMonto(estadisticas.totalRetiros) }}</p>
+            </div>
+            <div class="estadistica-card">
+                <h4>Saldo Neto</h4>
+                <p class="estadistica-number" [class.text-success]="estadisticas.saldoNeto >= 0"
+                    [class.text-danger]="estadisticas.saldoNeto < 0">
+                    {{ formatMonto(estadisticas.saldoNeto) }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Transacciones -->
+    <div *ngIf="!isLoading" class="table-container">
+        <table *ngIf="transaccionesFiltradas.length > 0">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Cuenta</th>
+                    <th>Cuenta Destino</th>
+                    <th>Fecha</th>
+                    <th *ngIf="isAdmin">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let transaccion of transaccionesFiltradas">
+                    <td>
+                        <span [class]="getTipoClass(transaccion.tipo)" class="tipo-badge">
+                            {{ getTipoIcon(transaccion.tipo) }} {{ transaccion.tipo }}
+                        </span>
+                    </td>
+                    <td [class]="transaccion.monto >= 0 ? 'text-success' : 'text-danger'">
+                        <strong>{{ formatMonto(transaccion.monto) }}</strong>
+                    </td>
+                    <td>{{ transaccion.numeroCuenta || 'N/A' }}</td>
+                    <td>{{ transaccion.numeroCuentaDestino || 'N/A' }}</td>
+                    <td>{{ transaccion.fecha | date:'medium' }}</td>
+                    <td *ngIf="isAdmin">
+                        <button (click)="deleteTransaccion(transaccion.idTransaccion)" class="btn-delete">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div *ngIf="transaccionesFiltradas.length === 0" class="no-data">
+            <p>No se encontraron transacciones.</p>
+            <button (click)="limpiarFiltros()" class="btn-primary">Mostrar Todas</button>
+        </div>
+    </div>
+</div>
