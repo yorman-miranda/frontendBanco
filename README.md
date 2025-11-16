@@ -39,7 +39,7 @@ Frontend desarrollado en ANGULAR para sistema bancario con autenticación y gest
 - **ANGULAR FORMS** - Formularios
 
 ## 📁 ESTRUCTURA DEL PROYECTO
-
+```
 SRC/
 ├── APP/
 │ ├── PAGES/
@@ -54,10 +54,6 @@ SRC/
 │ │ ├── TRANSACTIONS/
 │ │ └── BRANCHES/
 │ ├── SERVICES/
-│ │ ├── AUTH.SERVICE.TS
-│ │ ├── ACCOUNT.SERVICE.TS
-│ │ ├── USER.SERVICE.TS
-│ │ └── API.SERVICE.TS
 │ ├── GUARDS/
 │ │ ├── AUTH.GUARD.TS
 │ │ └── ADMIN.GUARD.TS
@@ -65,11 +61,9 @@ SRC/
 │ │ └── AUTH.INTERCEPTOR.TS
 │ ├── MODELS/
 │ │ ├── INDEX.TS
-│ └── MODELS/
-├── ASSETS/
 ├── ENVIRONMENTS/
 └── STYLES/
-
+```
 ## ⚙️ INSTALACIÓN Y CONFIGURACIÓN
 
 ### PRERREQUISITOS
@@ -82,7 +76,7 @@ SRC/
 ```bash
 # CLONAR REPOSITORIO
 git clone [url-repositorio]
-cd sistema-bancario-frontend
+cd frontend-bancario
 
 # INSTALAR DEPENDENCIAS
 npm install
@@ -92,7 +86,7 @@ cp src/environments/environment.example.ts src/environments/environment.ts
 
 # EJECUTAR EN MODO DESARROLLO
 ng serve
-
+```
 # ACCEDER A LA APLICACIÓN
 http://localhost:4200
 
